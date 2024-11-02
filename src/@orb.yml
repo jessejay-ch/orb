@@ -1,0 +1,153 @@
+---
+version: 2.1
+
+description: >
+  This Orb posts your test suite's coverage data to coveralls.io for
+  analysis, change tracking, and notifications.
+
+  When running on Pull Request builds, a comment will be added to the PR with
+  details about how coverage will be affected if merged.
+
+display:
+  source_url: https://github.com/coverallsapp/orb
+  home_url: https://coveralls.io/
+
+commands:
+  upload:
+    parameters:
+      coverage_file:
+        description: >
+          Local path to the coverage output file produced by your test suite.
+          An error will be thrown if the file can't be found.
+          This is the file that will be sent to the Coveralls API.
+        type: string
+        default: ''
+      coverage_files:
+        description: >
+          Space-separated list of coverage reports to be uploaded.
+        type: string
+        default: ''
+      coverage_format:
+        description: >
+          Force coverage report format. If not specified coveralls will try
+          to determine the format automatically based on file extension and/or
+          content. Supported formats are - lcov, simplecov, cobertura, jacoco,
+          gcov, golang, python.
+        type: string
+        default: ''
+      token:
+        description: >
+          Your Coveralls Repo token defined in your Circle's Environment
+          Variables.
+        type: env_var_name
+        default: COVERALLS_REPO_TOKEN
+      flag_name:
+        description: >
+          Options flag name of the job, e.g. "Unit Tests", "Integration Tests",
+          etc.
+        type: string
+        default: ''
+      parallel:
+        description: >
+          Set to true for parallel jobs, where multiple posts to Coveralls
+          will be performed before completing the build with
+          `parallel_finished`.
+        type: boolean
+        default: false
+      parallel_finished:
+        description: >
+          Set to true in the final job, after the other parallel jobs steps
+          have completed. This will send a webhook to Coveralls to set the
+          build complete.
+        type: boolean
+        default: false
+      coveralls_endpoint:
+        description: >
+          Hostname and protocol (https://<host>).
+          Specifies a Coveralls Enterprise hostname.
+          You can also define this in your Circle's Environment Variables as
+          COVERALLS_ENDPOINT
+        type: string
+        default: 'https://coveralls.io'
+      base_path:
+        description: >
+          Path to the root folder of the project the coverage was collected in.
+        type: string
+        default: ''
+      verbose:
+        description: >
+          Set to true for debug output. Deprecated, use debug instead.
+        type: boolean
+        default: false
+      debug:
+        description: Set to true for debug output. Replaces verbose.
+        type: boolean
+        default: false
+      dry_run:
+        description: Do not send anything but do the parsing
+        type: boolean
+        default: false
+      carryforward:
+        description: >
+          References for jobs to carry-forward from previous builds
+          (if missing).
+        type: string
+        default: ''
+      compare_ref:
+        description: >
+          Branch name to compare coverage with.
+          Specify if you want to always check coverage change for PRs
+          against one branch.
+        type: string
+        default: ''
+      compare_sha:
+        description: Commit SHA to compare coverage with.
+        type: string
+        default: ''
+      measure:
+        description: Enable time measurement logging
+        type: boolean
+        default: false
+      fail_on_error:
+        description: Whether to fail (exit code 1) on parsing or upload issues
+        type: boolean
+        default: true
+      coverage_reporter_version:
+        type: string
+        default: "latest"
+        description: >
+          Version of coverage-reporter to use. Prefix the version number
+          with 'v'. For example: v0.6.14. Set to 'latest' for the latest
+          version.
+      coverage_reporter_platform:
+        type: enum
+        default: "x86_64"
+        description: >
+          Platform of coverage-reporter to use. Supported values: x86_64
+          (default) and aarch64 (or arm64).
+        enum: ["x86_64", "aarch64", "arm64"]
+    steps:
+      - run:
+          name: Upload Coverage Results To Coveralls
+          environment:
+            COVERALLS_ENDPOINT: << parameters.coveralls_endpoint >>
+            COVERALLS_DONE: << parameters.parallel_finished >>
+            COVERALLS_BASE_PATH: << parameters.base_path >>
+            COVERALLS_REPO_TOKEN_ENV: << parameters.token >>
+            COVERALLS_VERBOSE: << parameters.verbose >>
+            COVERALLS_DEBUG: << parameters.debug >>
+            COVERALLS_COVERAGE_FILE: << parameters.coverage_file >>
+            COVERALLS_COVERAGE_FILES: << parameters.coverage_files >>
+            COVERALLS_CARRYFORWARD_FLAGS: << parameters.carryforward >>
+            COVERALLS_FLAG_NAME: << parameters.flag_name >>
+            COVERALLS_PARALLEL: << parameters.parallel >>
+            COVERALLS_DRY_RUN: << parameters.dry_run >>
+            COVERALLS_COMPARE_REF: << parameters.compare_ref >>
+            COVERALLS_COMPARE_SHA: << parameters.compare_sha >>
+            COVERALLS_COVERAGE_FORMAT: << parameters.coverage_format >>
+            COVERALLS_MEASURE: << parameters.measure >>
+            COVERALLS_FAIL_ON_ERROR: << parameters.fail_on_error >>
+            COVERAGE_REPORTER_VERSION: << parameters.coverage_reporter_version >>  # yamllint disable-line rule:line-length
+            COVERAGE_REPORTER_PLATFORM: << parameters.coverage_reporter_platform >>  # yamllint disable-line rule:line-length
+            COVERALLS_SOURCE_HEADER: circleci-orb
+          command: <<include(scripts/coveralls.sh)>>
